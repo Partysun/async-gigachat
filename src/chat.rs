@@ -40,6 +40,8 @@ impl From<ChatCompletionRequestBuilderError> for GigaChatError {
 pub struct ChatMessage {
     pub role: Option<Role>,
     pub content: String,
+    #[builder(default = "None::<Vec<String>>")]
+    pub attachments: Option<Vec<String>>,
 }
 
 impl From<ChatMessageBuilderError> for GigaChatError {

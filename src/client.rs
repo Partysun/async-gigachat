@@ -108,18 +108,38 @@ impl Client {
         self.execute(request).await
     }
 
+    pub async fn post_with_form<O>(
+        mut self,
+        path: &str,
+        form: reqwest::multipart::Form,
+    ) -> Result<O>
+    where
+        O: DeserializeOwned,
+    {
+        let form_data = form.text("purpose", "general");
+        let request_builder = self
+            .http_client
+            .post(format!("{}{}", self.config.api_base_url, path))
+            .bearer_auth(self.get_access_token().await?.access_token)
+            .multipart(form_data);
+
+        let request = request_builder.build()?;
+
+        self.execute(request).await
+    }
+
     pub async fn post<I, O>(mut self, path: &str, body: I) -> Result<O>
     where
         I: Serialize,
         O: DeserializeOwned,
     {
-        let request = self
+        let request_builder = self
             .http_client
             .post(format!("{}{}", self.config.api_base_url, path))
             .bearer_auth(self.get_access_token().await?.access_token)
-            .json(&body)
-            .build()?;
+            .json(&body);
 
+        let request = request_builder.build()?;
         self.execute(request).await
     }
 
@@ -163,7 +183,7 @@ impl Client {
 
         let response_text = response.text().await?;
 
-        debug!("response:\n{}", response_text);
+        debug!("Response:\n{}", response_text);
 
         let result: R = serde_json::from_str(&response_text)?;
 

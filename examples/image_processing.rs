@@ -23,7 +23,7 @@ async fn main() -> Result<()> {
     image_file.read_to_end(&mut image_bytes)?;
     let slice: &[u8] = &image_bytes;
     let response = Files::new(client.clone())
-        .create_file(&slice, "image_file_sample.png".to_string())
+        .create_file(&slice, "image_file_sample.png".to_string(), "image/png")
         .await?;
     let file_id = response.id.clone();
 

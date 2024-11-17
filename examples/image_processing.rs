@@ -2,9 +2,10 @@ use async_gigachat::{
     chat::{Chat, ChatCompletionRequestBuilder, ChatMessageBuilder, Role},
     client::Client,
     config::GigaChatConfig,
-    files::{Files, FilesRequest},
+    files::Files,
     result::Result,
 };
+use std::{fs::File, io::Read};
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -16,15 +17,41 @@ async fn main() -> Result<()> {
 
     let client = Client::with_config(config);
 
-    let request = FilesRequest {
-        file_path: "./examples/image_file_sample.png".to_string(),
-        file_name: "image_file_sample.png".to_string(),
-    };
-
-    let response = Files::new(client.clone()).create_files(request).await?;
+    // Create image file from bytes
+    let mut image_file = File::open("./examples/image_file_sample.png")?;
+    let mut image_bytes = Vec::new();
+    image_file.read_to_end(&mut image_bytes)?;
+    let slice: &[u8] = &image_bytes;
+    let response = Files::new(client.clone())
+        .create_file(&slice, "image_file_sample.png".to_string())
+        .await?;
     let file_id = response.id.clone();
+
     println!("Created file: {:?}", &file_id);
 
+    // Ask GigaChat about this image
+    let question = ChatMessageBuilder::default()
+        .role(Role::User)
+        .content("What is on this image?")
+        .attachments(vec![file_id.clone()])
+        .build()?;
+
+    let request = ChatCompletionRequestBuilder::default()
+        .messages(vec![question.clone()])
+        .model("GigaChat-Pro")
+        .build()?;
+
+    let response = Chat::new(client.clone()).completion(request).await?;
+    let choice = response.choices.first().unwrap();
+
+    println!("{}: {}", question.role.unwrap(), question.content);
+    println!(
+        "{}: {}",
+        choice.message.clone().role.unwrap(),
+        choice.message.content
+    );
+
+    // Read all files
     let response = Files::new(client.clone()).get_files().await?;
     println!(
         "All files: {:?}, Amount of files {}",
@@ -39,27 +66,7 @@ async fn main() -> Result<()> {
     //
     println!("Get file: {:?}", response);
 
-    let question = ChatMessageBuilder::default()
-        .role(Role::User)
-        .content("What is on this image?")
-        .attachments(vec![file_id.clone()])
-        .build()?;
-
-    let request = ChatCompletionRequestBuilder::default()
-        .messages(vec![question.clone()])
-        .model("GigaChat-Pro")
-        .build()?;
-
-    let response = Chat::new(client.clone()).completion(request).await?;
-    let choice = response.choices.get(0).unwrap();
-
-    println!("{}: {}", question.role.unwrap(), question.content);
-    println!(
-        "{}: {}",
-        choice.message.clone().role.unwrap(),
-        choice.message.content
-    );
-
+    // Delete this image
     let response = Files::new(client.clone())
         .delete_file_by_id(file_id)
         .await?;
@@ -67,5 +74,6 @@ async fn main() -> Result<()> {
         true => println!("File deleted: {:?}", response.id),
         false => println!("File is not deleted: {:?}", response.id),
     }
+
     Ok(())
 }

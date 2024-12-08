@@ -95,7 +95,6 @@ fn create_file_form<T: FileSource>(source: &T, name: &str, mime_str: &str) -> Re
 //     )
 //     .await?;
 //
-//TODO: need to implement more mime_str types. Not only image/png
 impl Files {
     pub fn new(client: Client) -> Self {
         Files { client }

@@ -26,7 +26,7 @@ async fn main() -> Result<()> {
         .build()?;
 
     let response = Chat::new(client).completion(request).await?;
-    let choice = response.choices.get(0).unwrap();
+    let choice = response.choices.first().unwrap();
 
     println!("{}: {}", question.role.unwrap(), question.content);
     println!(

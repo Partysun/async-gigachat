@@ -42,13 +42,15 @@
 //! };
 //!
 //! // Create client
-//! let client = Client::new();
+//! let config = GigaChatConfig::new();
+//! let client: Client = Client::with_config(config);
 //!
 //! // Create request using builder pattern
 //! let request = ChatCompletionRequestBuilder::default()
 //!     .messages(vec![ChatMessage {
 //!         role: Some(Role::User),
 //!         content: "Hey, how's it going?".into(),
+//!         attachments: None,
 //!     }])
 //!     .model("GigaChat:latest")
 //!     .build()
